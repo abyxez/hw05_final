@@ -24,10 +24,24 @@ class TaskCreateFormTests(TestCase):
             slug="test-slug",
             description="Test description"
         )
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        cls.uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
         cls.post = Post.objects.create(
             text="Test text",
             group=cls.group,
-            author=cls.author
+            author=cls.author,
+            image=cls.uploaded
         )
 
     @classmethod
@@ -38,7 +52,7 @@ class TaskCreateFormTests(TestCase):
     def test_create_post_is_done_correctly(self):
         """Валидная форма создает запись в Post."""
         posts_count = Post.objects.count()
-        small_gif = (
+        small_gif_2 = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
             b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
@@ -46,15 +60,15 @@ class TaskCreateFormTests(TestCase):
             b'\x02\x00\x01\x00\x00\x02\x02\x0C'
             b'\x0A\x00\x3B'
         )
-        uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=small_gif,
+        uploaded_2 = SimpleUploadedFile(
+            name='small_2.gif',
+            content=small_gif_2,
             content_type='image/gif'
         )
         form_data = {
             "group": self.post.group.id,
             "text": "Test text 2",
-            "image": uploaded
+            "image": uploaded_2
         }
         response = self.author_client.post(
             reverse("posts:post_create"), data=form_data, follow=True
@@ -70,7 +84,7 @@ class TaskCreateFormTests(TestCase):
             Post.objects.filter(
                 text=form_data["text"],
                 group=form_data["group"],
-                image="posts/small.gif").exists()
+                image="posts/small_2.gif").exists()
         )
 
     def test_edit_post_is_done_correctly(self):
@@ -80,7 +94,24 @@ class TaskCreateFormTests(TestCase):
             reverse("posts:post_detail", kwargs={"post_id": self.post.id})
         )
         editable_post = response.context["post"]
-        new_form_data = {"group": self.post.group.id, "text": "Just edit"}
+        small_gif_3 = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        uploaded_3 = SimpleUploadedFile(
+            name='small_3.gif',
+            content=small_gif_3,
+            content_type='image/gif'
+        )
+        new_form_data = {
+            "group": self.post.group.id,
+            "text": "Just edit",
+            "image": uploaded_3
+        }
         response = self.author_client.post(
             reverse("posts:post_edit", kwargs={"post_id": editable_post.id}),
             data=new_form_data,
@@ -96,5 +127,6 @@ class TaskCreateFormTests(TestCase):
         self.assertTrue(
             Post.objects.filter(
                 text=new_form_data["text"],
-                group=new_form_data["group"]).exists()
+                group=new_form_data["group"],
+                image="posts/small_3.gif").exists()
         )

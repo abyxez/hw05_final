@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.models import Group, Post
+from posts.models import Group, Post, Follow
 
 User = get_user_model()
 
@@ -27,11 +27,11 @@ class PostPageTests(TestCase):
             text="Test text", author=cls.author, group=cls.group
         )
 
-    def _assert_post_has_right_attributes(self, post, id, author, group):
+    def _assert_post_has_right_attributes(self, post, id, author, group, text):
         """ Шаблонный метод для проверки post.(id,author,group). """
         self.assertEqual(
             post.id, id,
-            "Post checking: post.text wrong!"
+            "Post checking: post.id wrong!"
         )
         self.assertEqual(
             post.author, author,
@@ -40,6 +40,10 @@ class PostPageTests(TestCase):
         self.assertEqual(
             post.group, group,
             "Post checking: post.group wrong!"
+        )
+        self.assertEqual(
+            post.text, text,
+            "Post checking: post.text wrong!"
         )
 
     def test_post_pages_show_correct_templates(self):
@@ -73,7 +77,8 @@ class PostPageTests(TestCase):
             first_object,
             self.post.id,
             self.post.author,
-            self.post.group
+            self.post.group,
+            self.post.text
         )
 
     def test_group_list_page_gets_correct_context(self):
@@ -91,7 +96,8 @@ class PostPageTests(TestCase):
             first_object,
             self.post.id,
             self.post.author,
-            self.post.group
+            self.post.group,
+            self.post.text
         )
 
     def test_profile_page_gets_correct_context(self):
@@ -104,7 +110,8 @@ class PostPageTests(TestCase):
             first_object,
             self.post.id,
             self.post.author,
-            self.post.group
+            self.post.group,
+            self.post.text
         )
 
     def test_post_detail_page_gets_correct_context(self):
@@ -117,7 +124,8 @@ class PostPageTests(TestCase):
             first_object,
             self.post.id,
             self.post.author,
-            self.post.group
+            self.post.group,
+            self.post.text
         )
 
     def test_post_create_page_gets_correct_context(self):
@@ -153,3 +161,108 @@ class PostPageTests(TestCase):
                 self.assertIsInstance(
                     form_field, expected, "Post edit form context bad!"
                 )
+
+    def test_post_created_belongs_only_to_its_group(self):
+        """ Созданный пост не существует в другой группе,
+            которой не принадлежит.
+        """
+        Group.objects.create(
+            title="Useless",
+            slug="Any",
+            description="No need after test is done"
+        )
+        response = self.client.get(
+            reverse("posts:group_list", kwargs={"slug": "Any"})
+        )
+        content_new_group = response.context["page_obj"]
+        self.assertEqual(
+            len(content_new_group),
+            0,
+            "Created post is shown in a foreign group!"
+        )
+
+    def test_follow_system_is_working_correctly(self):
+        """
+            Система подписки работает, как положено
+            (authorized follows author).
+        """
+        self.assertFalse(
+            Follow.objects.filter(
+                user=self.user,
+                author=self.author
+            ).exists()
+        )
+        self.authorized_client.post(
+            reverse(
+                "posts:profile_follow",
+                kwargs={"username": self.author.username}
+            )
+        )
+        self.assertTrue(
+            Follow.objects.filter(
+                user=self.user,
+                author=self.author
+            ).exists()
+        )
+
+    def test_unfollow_system_is_working_correctly(self):
+        """
+            Система отписки работает, как положено
+            (authorized forced follower successfully unfollows).
+        """
+        Follow.objects.create(
+            user=self.user,
+            author=self.author
+        )
+        self.authorized_client.post(
+            reverse(
+                "posts:profile_unfollow",
+                kwargs={"username": self.author.username}
+            )
+        )
+        self.assertFalse(
+            Follow.objects.filter(
+                user=self.user,
+                author=self.author
+            ).exists()
+        )
+
+    def test_follow_system_shows_correct_content_for_the_follower(self):
+        """
+            Юзер подписался и видит контент в follow_index.
+        """
+        Follow.objects.create(
+            user=self.user,
+            author=self.author
+        )
+        response = self.authorized_client.get(
+            reverse("posts:follow_index")
+        )
+        expected = response.context["page_obj"][0]
+        self._assert_post_has_right_attributes(
+            expected,
+            self.post.id,
+            self.post.author,
+            self.post.group,
+            self.post.text
+        )
+
+    def test_follow_system_shows_no_content_if_not_following(self):
+        """
+            Юзер НЕ подписался и НЕ видит контент в follow_index.
+        """
+        self.assertFalse(
+            Follow.objects.filter(
+                user=self.user,
+                author=self.author
+            ).exists()
+        )
+        response = self.authorized_client.get(
+            reverse("posts:follow_index")
+        )
+        expected = response.context["page_obj"]
+        self.assertEqual(
+            len(expected),
+            0,
+            "Not following gets content for followers"
+        )

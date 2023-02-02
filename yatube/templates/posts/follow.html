@@ -3,10 +3,8 @@
 {% endblock %}
 {% load thumbnail %}
 {% block content%}
-{% load cache %}
   <h1>Новости тех, на кого вы подписаны</h1>
-  {% cache 20 sidebar %}
-  {% include 'posts/includes/switcher.html' %}
+  {% include 'posts/includes/switcher.html' with follow_index=True %}
     {% for post in page_obj %}
       <article>
         <ul>
@@ -33,6 +31,5 @@
         <hr>
       {% endif %} 
     {% endfor %}
-  {% endcache %}
   {% include 'posts/includes/paginator.html' %}
 {% endblock %}

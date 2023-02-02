@@ -14,8 +14,8 @@
           {% if post.group %}
           <li class="list-group-item">
             <a href="{% url 'posts:group_list' post.group.slug %}">Группа: {{ post.group.title }}</a>
-          {% endif %}
           </li>
+          {% endif %}
           <li class="list-group-item">
             Автор: {{ post.author.username }}
           </li>

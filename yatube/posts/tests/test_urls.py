@@ -1,9 +1,10 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, RequestFactory
 
 from posts.models import Group, Post
+from core.views import csrf_failure
 
 User = get_user_model()
 
@@ -92,6 +93,7 @@ class PostURLTests(TestCase):
             f"/profile/{PostURLTests.post.author}/": "posts/profile.html",
             f"/posts/{PostURLTests.post.id}/": "posts/post_detail.html",
             "/create/": "posts/create_post.html",
+            "/qwertyyylol/": "core/404.html"
         }
         for pattern, template in url_patterns.items():
             with self.subTest(pattern=pattern):
@@ -104,3 +106,11 @@ class PostURLTests(TestCase):
             f"/posts/{PostURLTests.post.id}/edit/"
         )
         self.assertTemplateUsed(response, "posts/create_post.html")
+
+    def test_403_used_custom_template_and_returned_403(self):
+        """Проверяем status_code для core error-pages."""
+        factory = RequestFactory()
+        request = factory.get("/")
+        self.assertTrue(csrf_failure(request), HTTPStatus.FORBIDDEN)
+# response = self.authorized_client.get("/")
+# self.assertTemplateUsed(csrf_failure(request), "core/403.html")

@@ -67,9 +67,6 @@ class Comment(models.Model):
     class Meta:
         ordering = ('created',)
 
-    def __str__(self) -> str:
-        return super().__str__()
-
 
 class Follow(models.Model):
     user = models.ForeignKey(
