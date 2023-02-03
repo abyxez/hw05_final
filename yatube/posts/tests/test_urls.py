@@ -112,5 +112,3 @@ class PostURLTests(TestCase):
         factory = RequestFactory()
         request = factory.get("/")
         self.assertTrue(csrf_failure(request), HTTPStatus.FORBIDDEN)
-# response = self.authorized_client.get("/")
-# self.assertTemplateUsed(csrf_failure(request), "core/403.html")

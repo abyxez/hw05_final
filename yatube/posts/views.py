@@ -123,8 +123,7 @@ def profile_follow(request, username):
     authorObj = get_object_or_404(User, username=username)
     if request.user != authorObj:
         Follow.objects.get_or_create(user=request.user, author=authorObj)
-    context = {"author": authorObj}
-    return render(request, "posts/follow.html", context)
+    return redirect("posts:profile", username=authorObj.username)
 
 
 @login_required
@@ -132,4 +131,4 @@ def profile_unfollow(request, username):
     authorObj = get_object_or_404(User, username=username)
     if request.user != authorObj:
         Follow.objects.get(user=request.user, author=authorObj).delete()
-    return render(request, "posts/follow.html", {"author": authorObj})
+    return redirect("posts:profile", username=authorObj.username)

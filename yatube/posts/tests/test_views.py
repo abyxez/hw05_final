@@ -166,18 +166,18 @@ class PostPageTests(TestCase):
         """ Созданный пост не существует в другой группе,
             которой не принадлежит.
         """
-        Group.objects.create(
+        any_group = Group.objects.create(
             title="Useless",
             slug="Any",
             description="No need after test is done"
         )
         response = self.client.get(
-            reverse("posts:group_list", kwargs={"slug": "Any"})
+            reverse("posts:group_list", kwargs={"slug": any_group.slug})
         )
         content_new_group = response.context["page_obj"]
-        self.assertEqual(
-            len(content_new_group),
-            0,
+        self.assertNotIn(
+            self.post,
+            content_new_group,
             "Created post is shown in a foreign group!"
         )
 
@@ -192,7 +192,7 @@ class PostPageTests(TestCase):
                 author=self.author
             ).exists()
         )
-        self.authorized_client.post(
+        self.authorized_client.get(
             reverse(
                 "posts:profile_follow",
                 kwargs={"username": self.author.username}
@@ -214,7 +214,7 @@ class PostPageTests(TestCase):
             user=self.user,
             author=self.author
         )
-        self.authorized_client.post(
+        self.authorized_client.get(
             reverse(
                 "posts:profile_unfollow",
                 kwargs={"username": self.author.username}
@@ -261,8 +261,8 @@ class PostPageTests(TestCase):
             reverse("posts:follow_index")
         )
         expected = response.context["page_obj"]
-        self.assertEqual(
-            len(expected),
-            0,
+        self.assertNotIn(
+            self.post,
+            expected,
             "Not following gets content for followers"
         )

@@ -18,16 +18,18 @@ class PostForm(forms.ModelForm):
         model = Post
         fields = ("text", "group", "image")
 
-    def clean_subject(self):
+    def clean_text(self):
         data = self.cleaned_data["text"]
+        bad_words = []
         for i in words_not_to_be_used:
             if i in data.lower():
-                bad_words = ""
-                bad_words += i
+                bad_words += i + " "
+        if bad_words:
+            bad_list = ",".join(bad_words)
             raise forms.ValidationError(
                 "Поле должно быть заполнено,"
-                "но без ругани, слова "
-                f'"{bad_words}" запрещено использовать!'
+                "но без ругани, "
+                f'"{bad_list}" запрещено использовать!'
             )
         return data
 
