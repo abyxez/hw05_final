@@ -90,7 +90,6 @@ class TaskCreateFormTests(TestCase):
     def test_edit_post_is_done_correctly(self):
         """Валидная форма изменяет текущий пост."""
         posts_count = Post.objects.count()
-        editable_post = self.post
         small_gif_3 = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -110,7 +109,7 @@ class TaskCreateFormTests(TestCase):
             "image": uploaded_3
         }
         response = self.author_client.post(
-            reverse("posts:post_edit", kwargs={"post_id": editable_post.id}),
+            reverse("posts:post_edit", kwargs={"post_id": self.post.id}),
             data=new_form_data,
             follow=True,
         )
